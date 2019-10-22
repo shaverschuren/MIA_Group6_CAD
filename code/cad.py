@@ -20,11 +20,11 @@ def sigmoid(a):
     #  sigmoid values for every element of the input vector.
 
     if type(a)=='int':
-        s=1/(1+np.exp(-a))
+        s = 1/(1+np.exp(-a))
     else:
-        s=np.zeros(a.shape)
+        s = np.zeros(a.shape)
         for i in range(len(a)):
-            s[i]=1/(1+np.exp(-a[i]))
+            s[i] = 1/(1+np.exp(-a[i]))
 
     #-------------------------------------------------------------------#
 
@@ -48,7 +48,7 @@ def lr_nll(X, Y, Theta):
     #-------------------------------------------------------------------#
     # Implement the expression for the NLL.
 
-    L= -np.sum(Y*np.log(p)+(1-Y)*np.log(1-p))
+    L = -np.sum(Y*np.log(p)+(1-Y)*np.log(1-p))
 
     #-------------------------------------------------------------------#
 
