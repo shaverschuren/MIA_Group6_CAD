@@ -81,8 +81,8 @@ def linear_regression():
     valXones = util.addones(valX)
     valY = validation_data[:, 1].reshape(-1, 1)
 
-    E_validation= np.transpose(valXones.dot(Theta) - valY).dot(valXones.dot(Theta) - valY)
-    E_test = np.transpose(testXones.dot(Theta) - testY).dot(testXones.dot(Theta) - testY)
+    E_validation= np.transpose(valXones.dot(Theta) - valY).dot(valXones.dot(Theta) - valY)/len(valY)
+    E_test = np.transpose(testXones.dot(Theta) - testY).dot(testXones.dot(Theta) - testY)/len(testY)
     #---------------------------------------------------------------------#
 
     return E_validation, E_test
