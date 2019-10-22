@@ -52,26 +52,47 @@ def nuclei_measurement():
     # the area of nuclei in microscopy images. Then, use the trained model
     # to predict the areas of the nuclei in the test dataset.
 
-    training_x_zeros= util.addones(training_x)
+    training_x_ones= util.addones(training_x)
 
-    Theta,E_train=reg.ls_solve(training_x_zeros,training_y)
+    Theta,E_train=reg.ls_solve(training_x_ones,training_y)
 
     predicted_y = util.addones(test_x).dot(Theta)
 
+
+    ## quadratic regression
+    training_x_ones_quad = util.addones(np.concatenate((training_x,training_x**2),axis=1))
+
+    Theta_quad , E_train = reg.ls_solve(training_x_ones_quad, training_y)
+
+    predicted_y_quad = util.addones(np.concatenate((test_x,test_x**2),axis=1)).dot(Theta_quad)
+
+    # Error
+
+    E = np.transpose(predicted_y - test_y).dot(predicted_y - test_y)/len(test_y)
+    E_quad = np.transpose(predicted_y_quad - test_y).dot(predicted_y_quad - test_y)/len(test_y)
+    print(E)
+    print(E_quad)
     #---------------------------------------------------------------------#
 
     # visualize the results
     fig2 = plt.figure(figsize=(16,8))
-    ax1  = fig2.add_subplot(121)
+    ax1  = fig2.add_subplot(221)
     line1, = ax1.plot(predicted_y, test_y, ".g", markersize=3)
     ax1.grid()
     ax1.set_xlabel('Area')
     ax1.set_ylabel('Predicted Area')
     ax1.set_title('Training with full sample')
 
+    ax2 = fig2.add_subplot(222)
+    line1, = ax2.plot(predicted_y_quad, test_y, ".g", markersize=3)
+    ax2.grid()
+    ax2.set_xlabel('Area')
+    ax2.set_ylabel('Predicted Area')
+    ax2.set_title('Training with full sample quadratic')
+
     #training with smaller number of training samples
     #---------------------------------------------------------------------#
-    # TODO: Train a model with reduced dataset size (e.g. every fourth
+    # Train a model with reduced dataset size (e.g. every fourth
     # training sample).
 
     N=4;
@@ -79,21 +100,44 @@ def nuclei_measurement():
     d_training_x = training_x[ix, :]
     d_training_y = training_y[ix, :]
 
-    d_training_x_zeros = util.addones(d_training_x)
+    d_training_x_ones = util.addones(d_training_x)
 
-    d_Theta, d_E_train = reg.ls_solve(d_training_x_zeros, d_training_y)
+    d_Theta, d_E_train = reg.ls_solve(d_training_x_ones, d_training_y)
 
-    predicted_y = util.addones(test_x).dot(d_Theta)
+    d_predicted_y = util.addones(test_x).dot(d_Theta)
+
+    # quadratic regression with downsampled data
+    d_training_x_ones_quad = util.addones(np.concatenate((d_training_x, d_training_x**2),axis=1))
+
+    d_Theta_quad, E_train = reg.ls_solve(d_training_x_ones_quad, d_training_y)
+
+    d_predicted_y_quad = util.addones(np.concatenate((test_x, test_x ** 2),axis=1)).dot(d_Theta_quad)
+
+    # Error
+
+    d_E = np.transpose(d_predicted_y - test_y).dot(d_predicted_y - test_y) / len(test_y)
+    d_E_quad = np.transpose(d_predicted_y_quad - test_y).dot(d_predicted_y_quad - test_y) / len(test_y)
+    print(d_E)
+    print(d_E_quad)
 
     #---------------------------------------------------------------------#
 
     # visualize the results
-    ax2  = fig2.add_subplot(122)
-    line2, = ax2.plot(predicted_y, test_y, ".g", markersize=3)
-    ax2.grid()
-    ax2.set_xlabel('Area')
-    ax2.set_ylabel('Predicted Area')
-    ax2.set_title('Training with smaller sample')
+    ax3  = fig2.add_subplot(223)
+    line2, = ax3.plot(d_predicted_y, test_y, ".g", markersize=3)
+    ax3.grid()
+    ax3.set_xlabel('Area')
+    ax3.set_ylabel('Predicted Area')
+    ax3.set_title('Training with smaller sample')
+
+    ax4  = fig2.add_subplot(224)
+    line2, = ax4.plot(d_predicted_y_quad, test_y, ".g", markersize=3)
+    ax4.grid()
+    ax4.set_xlabel('Area')
+    ax4.set_ylabel('Predicted Area')
+    ax4.set_title('Training with smaller sample with quadratic regression')
+
+
 
 
 def nuclei_classification():
@@ -137,11 +181,11 @@ def nuclei_classification():
     # (batch_size) and number of iterations (num_iterations), as well as
     # initial values for the model parameters (Theta) that will result in
     # fast training of an accurate model for this classification problem.
-    mu = 0.001
+    mu = 0.0001
 
-    batch_size = 2000
+    batch_size = 500
 
-    Theta = np.zeros(training_x.shape[1]+1)#0.02*np.random.rand(training_x.shape[1]+1, 1)
+    Theta = np.zeros((training_x.shape[1]+1,1))#0.2*np.random.rand(training_x.shape[1]+1, 1)
 
     num_iterations = 50
     #-------------------------------------------------------------------#
