@@ -113,9 +113,15 @@ def nuclei_classification():
     # every pixel is a feature so the number of features is:
     # height x width x color channels
     numFeatures = imageSize[0]*imageSize[1]*imageSize[2]
+
     training_x = training_images.reshape(numFeatures, training_images.shape[3]).T.astype(float)
+    training_x = np.c_([training_x, np.square(training_x)])
+
     validation_x = validation_images.reshape(numFeatures, validation_images.shape[3]).T.astype(float)
+    validation_x = np.c_([validation_x, np.square(validation_x)])
+
     test_x = test_images.reshape(numFeatures, test_images.shape[3]).T.astype(float)
+    test_x = np.c_([test_x, np.square(test_x)])
 
     # the training will progress much better if we
     # normalize the features
@@ -137,13 +143,16 @@ def nuclei_classification():
     # (batch_size) and number of iterations (num_iterations), as well as
     # initial values for the model parameters (Theta) that will result in
     # fast training of an accurate model for this classification problem.
-    mu = 0.001
+    mu = 0.0003
 
-    batch_size = 2000
+    batch_size = 30
 
-    Theta = np.zeros(training_x.shape[1]+1)#0.02*np.random.rand(training_x.shape[1]+1, 1)
+    Theta = 0.0000002*np.random.rand(training_x.shape[1]+1, 1)
 
-    num_iterations = 50
+    num_iterations = 200
+
+    fun_mu = lambda k: mu * np.exp(-5 * k / num_iterations)
+
     #-------------------------------------------------------------------#
 
     xx = np.arange(num_iterations)
@@ -158,7 +167,7 @@ def nuclei_classification():
     ax2 = fig.add_subplot(111)
     ax2.set_xlabel('Iteration')
     ax2.set_ylabel('Loss (average per sample)')
-    ax2.set_title('mu = '+str(mu))
+    ax2.set_title('mu = ' + str(mu) +" * np.exp(-5 * k / " + str(num_iterations) + ")")
     h1, = ax2.plot(xx, loss, linewidth=2) #'Color', [0.0 0.2 0.6],
     h2, = ax2.plot(xx, validation_loss, linewidth=2) #'Color', [0.8 0.2 0.8],
     ax2.set_ylim(0, 0.7)
@@ -181,7 +190,8 @@ def nuclei_classification():
         # gradient descent
         # instead of the numerical gradient, we compute the gradient with
         # the analytical expression, which is much faster
-        Theta_new = Theta - mu*cad.lr_agrad(training_x_ones, training_y[idx], Theta).T
+
+        Theta_new = Theta - fun_mu(k)*cad.lr_agrad(training_x_ones, training_y[idx], Theta).T
 
         loss[k] = loss_fun(Theta_new)/batch_size
         validation_loss[k] = cad.lr_nll(validation_x_ones, validation_y, Theta_new)/validation_x.shape[0]
