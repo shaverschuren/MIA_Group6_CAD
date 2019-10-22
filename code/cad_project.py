@@ -70,8 +70,7 @@ def nuclei_measurement():
 
     E = np.transpose(predicted_y - test_y).dot(predicted_y - test_y)/len(test_y)
     E_quad = np.transpose(predicted_y_quad - test_y).dot(predicted_y_quad - test_y)/len(test_y)
-    print(E)
-    print(E_quad)
+
     #---------------------------------------------------------------------#
 
     # visualize the results
@@ -81,14 +80,14 @@ def nuclei_measurement():
     ax1.grid()
     ax1.set_xlabel('Area')
     ax1.set_ylabel('Predicted Area')
-    ax1.set_title('Training with full sample')
+    ax1.set_title('Training with full sample, Error: {:.2f}'.format(E.item(0)))
 
     ax2 = fig2.add_subplot(222)
     line1, = ax2.plot(predicted_y_quad, test_y, ".g", markersize=3)
     ax2.grid()
     ax2.set_xlabel('Area')
     ax2.set_ylabel('Predicted Area')
-    ax2.set_title('Training with full sample quadratic')
+    ax2.set_title('Training with full sample quadratic, Error: {:.2f}'.format(E_quad.item(0)))
 
     #training with smaller number of training samples
     #---------------------------------------------------------------------#
@@ -117,8 +116,6 @@ def nuclei_measurement():
 
     d_E = np.transpose(d_predicted_y - test_y).dot(d_predicted_y - test_y) / len(test_y)
     d_E_quad = np.transpose(d_predicted_y_quad - test_y).dot(d_predicted_y_quad - test_y) / len(test_y)
-    print(d_E)
-    print(d_E_quad)
 
     #---------------------------------------------------------------------#
 
@@ -128,15 +125,15 @@ def nuclei_measurement():
     ax3.grid()
     ax3.set_xlabel('Area')
     ax3.set_ylabel('Predicted Area')
-    ax3.set_title('Training with smaller sample')
+    ax3.set_title('Training with smaller sample, Error: {:.2f}'.format(d_E.item(0)))
 
     ax4  = fig2.add_subplot(224)
     line2, = ax4.plot(d_predicted_y_quad, test_y, ".g", markersize=3)
     ax4.grid()
     ax4.set_xlabel('Area')
     ax4.set_ylabel('Predicted Area')
-    ax4.set_title('Training with smaller sample with quadratic regression')
-
+    ax4.set_title('Training with smaller sample with quadratic regression, Error: {:.2f}'.format(d_E_quad.item(0)))
+    plt.tight_layout()
 
 
 
