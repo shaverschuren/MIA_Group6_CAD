@@ -60,16 +60,16 @@ def nuclei_measurement():
 
 
     ## quadratic regression
-    training_x_ones_quad = util.addones(np.concatenate((training_x,training_x**2),axis=1))
+    training_x_ones_quad = util.addones(np.concatenate((training_x,np.square(training_x)),axis=1))
 
     Theta_quad , E_train_quad = reg.ls_solve(training_x_ones_quad, training_y)
 
-    predicted_y_quad = util.addones(np.concatenate((test_x,test_x**2),axis=1)).dot(Theta_quad)
+    predicted_y_quad = util.addones(np.concatenate((test_x,np.square(test_x)),axis=1)).dot(Theta_quad)
 
     # Error
 
-    E = np.transpose(predicted_y - test_y).dot(predicted_y - test_y)/len(test_y)
-    E_quad = np.transpose(predicted_y_quad - test_y).dot(predicted_y_quad - test_y)/len(test_y)
+    E = np.transpose(predicted_y - test_y).dot(predicted_y - test_y)/len(predicted_y)
+    E_quad = np.transpose(predicted_y_quad - test_y).dot(predicted_y_quad - test_y)/len(predicted_y_quad)
 
     #---------------------------------------------------------------------#
 
@@ -120,8 +120,8 @@ def nuclei_measurement():
 
     # Error
 
-    d_E = np.transpose(d_predicted_y - test_y).dot(d_predicted_y - test_y) / len(test_y)
-    d_E_quad = np.transpose(d_predicted_y_quad - test_y).dot(d_predicted_y_quad - test_y) / len(test_y)
+    d_E = np.transpose(d_predicted_y - test_y).dot(d_predicted_y - test_y) / len(d_predicted_y)
+    d_E_quad = np.transpose(d_predicted_y_quad - test_y).dot(d_predicted_y_quad - test_y) / len(d_predicted_y_quad)
 
     #---------------------------------------------------------------------#
 
@@ -164,7 +164,7 @@ def nuclei_measurement():
     plt.tight_layout()
 
 
-def nuclei_classification(batchsize=80,muinitial=0.0003, numiterations=50,downsample_factor=1):
+def nuclei_classification(batchsize=80,muinitial=0.0004, numiterations=50, order=1,downsample_factor=1):
     ## dataset preparation
     fn = '../data/nuclei_data_classification.mat'
     mat = scipy.io.loadmat(fn)
@@ -182,16 +182,19 @@ def nuclei_classification(batchsize=80,muinitial=0.0003, numiterations=50,downsa
     # height x width x color channels
     numFeatures = imageSize[0]*imageSize[1]*imageSize[2]
 
-
-    # Setup datasets and append them with the quadratic feature
+    # Setup datasets
     training_x = training_images.reshape(numFeatures, training_images.shape[3]).T.astype(float)
-    training_x = np.concatenate((training_x, np.square(training_x)), axis=1)
-
     validation_x = validation_images.reshape(numFeatures, validation_images.shape[3]).T.astype(float)
-    validation_x = np.concatenate((validation_x, np.square(validation_x)), axis=1)
-
     test_x = test_images.reshape(numFeatures, test_images.shape[3]).T.astype(float)
-    test_x = np.concatenate((test_x, np.square(test_x)), axis=1)
+
+    # Append datasets with n-order features if necessary
+    if order == 1:
+        pass
+    else:
+        for i in range(int(order)):
+            training_x = np.concatenate((training_x, training_x ** (i+1)), axis=1)
+            validation_x = np.concatenate((validation_x, validation_x ** (i + 1)), axis=1)
+            test_x = np.concatenate((test_x, test_x ** (i + 1)), axis=1)
 
     # Setup downsampling indices
     if downsample_factor == 1:
@@ -323,8 +326,18 @@ def nuclei_classification(batchsize=80,muinitial=0.0003, numiterations=50,downsa
         if STOP:
             break
 
+    predicted_labels = (util.addones(test_x).dot(Theta) > 0.5).astype(int)
 
-def optimise_nuclei_classification():
+    num_trues = 0
+    for record in range(len(predicted_labels)):
+        if predicted_labels[record] == test_y[record]:
+            num_trues = num_trues + 1
+
+    accuracy = num_trues / len(predicted_labels)
+
+    print("ACCURACY = ", round(accuracy, 5))
+
+def optimise_nuclei_classification(numiterations=50, order=1):
 
     print("========== RUN optimise_nuclei_classification =========\n")
     ## dataset preparation
@@ -344,16 +357,19 @@ def optimise_nuclei_classification():
     # height x width x color channels
     numFeatures = imageSize[0]*imageSize[1]*imageSize[2]
 
-
-    # Setup datasets and append them with the quadratic feature
+    # Setup datasets
     training_x = training_images.reshape(numFeatures, training_images.shape[3]).T.astype(float)
-    training_x = np.concatenate((training_x, np.square(training_x)), axis=1)
-
     validation_x = validation_images.reshape(numFeatures, validation_images.shape[3]).T.astype(float)
-    validation_x = np.concatenate((validation_x, np.square(validation_x)), axis=1)
-
     test_x = test_images.reshape(numFeatures, test_images.shape[3]).T.astype(float)
-    test_x = np.concatenate((test_x, np.square(test_x)), axis=1)
+
+    # Append datasets with n-order features if necessary
+    if order == 1:
+        pass
+    else:
+        for i in range(int(order)):
+            training_x = np.concatenate((training_x, training_x ** (i+1)), axis=1)
+            validation_x = np.concatenate((validation_x, validation_x ** (i + 1)), axis=1)
+            test_x = np.concatenate((test_x, test_x ** (i + 1)), axis=1)
 
     # the training will progress much better if we
     # normalize the features
@@ -377,7 +393,7 @@ def optimise_nuclei_classification():
     Theta = 0.0000002*np.random.rand(training_x.shape[1]+1, 1)
 
     # 50 iterations proved to be more than enough, while yielding decent computing times (will not be optimised over)
-    num_iterations = 50
+    num_iterations = numiterations
 
     # Set some sample initial mu's
     mu = [0.0002, 0.0003, 0.0004]
