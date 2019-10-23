@@ -10,6 +10,9 @@ import cad
 import scipy
 from IPython.display import display, clear_output
 import scipy.io
+import timeit
+import warnings
+warnings.filterwarnings("ignore", category=RuntimeWarning)  # Suppresses RunTimeWarnings in jupyter output ...
 
 
 def nuclei_measurement():
@@ -164,7 +167,7 @@ def nuclei_measurement():
     plt.tight_layout()
 
 
-def nuclei_classification(batchsize=80,muinitial=0.0004, numiterations=50, order=1,downsample_factor=1):
+def nuclei_classification(batchsize=200,muinitial=0.0002, numiterations=50, order=1,downsample_factor=1):
     ## dataset preparation
     fn = '../data/nuclei_data_classification.mat'
     mat = scipy.io.loadmat(fn)
@@ -340,6 +343,7 @@ def nuclei_classification(batchsize=80,muinitial=0.0004, numiterations=50, order
 def optimise_nuclei_classification(numiterations=50, order=1):
 
     print("========== RUN optimise_nuclei_classification =========\n")
+    start_time = timeit.default_timer()
     ## dataset preparation
     fn = '../data/nuclei_data_classification.mat'
     mat = scipy.io.loadmat(fn)
@@ -385,7 +389,10 @@ def optimise_nuclei_classification(numiterations=50, order=1):
     test_x = test_x - np.tile(meanTrain, (test_x.shape[0], 1))
     test_x = test_x / np.tile(stdTrain, (test_x.shape[0], 1))
 
-    print("Dataset prepared. \nStart regression training...\n")
+    print("Dataset prepared.\n")
+
+    print("- Model order : \t", order)
+    print("- Max n_iter : \t\t", numiterations)
 
     ## training linear regression model
 
@@ -396,12 +403,16 @@ def optimise_nuclei_classification(numiterations=50, order=1):
     num_iterations = numiterations
 
     # Set some sample initial mu's
-    mu = [0.0002, 0.0003, 0.0004]
+    mu = [0.0001, 0.0002, 0.0003, 0.0004, 0.0005]
 
     # Set some sample batch sizes
-    batch_size = [10, 20, 30, 50, 80]
+    batch_size = [10, 20, 30, 50, 80, 100, 200]
 
-    print(len(batch_size)*len(mu), " iterables detected.\n\n")
+    print("- Batch sizes : \t", batch_size)
+    print("- initial mu's : \t", mu)
+    print("\nStart regression training...\n")
+
+    print(len(batch_size)*len(mu), " iterations detected.\n - - - - - - - ")
     val_loss_matrix = np.zeros((len(batch_size), len(mu)))
 
     percentage = 0
@@ -459,11 +470,13 @@ def optimise_nuclei_classification(numiterations=50, order=1):
             val_loss_matrix[i, j] = validation_loss[k]
         percentage = percentage + 100/len(batch_size)
         print(round(percentage, 1), " percent completed...")
+    print(" - - - - - - - ")
 
     (i_min, j_min) = tuple(np.where(val_loss_matrix == np.min(val_loss_matrix)))
     best_batch_size = batch_size[int(i_min)]
     best_mu = mu[int(j_min)]
 
-    print("\n\nCOMPLETED!")
-    print("Optimal batch size = ", best_batch_size)
-    print("Optimal initial mu = ", best_mu)
+    end_time = timeit.default_timer()
+    print("\n\nCOMPLETED! ... Total run time : ", round((end_time-start_time)/60, 2), " min")
+    print("\nOptimal batch size : ", best_batch_size)
+    print("Optimal initial mu : ", best_mu)
